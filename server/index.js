@@ -24,44 +24,47 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, '..')));
 
 // ---- REST: Register ----
-app.post('/api/register', (req, res) => {
-  const { username, password } = req.body || {};
+app.post('/api/register', async (req, res) => {
+  try {
+    const { username, password } = req.body || {};
 
-  if (!username || typeof username !== 'string' || username.trim().length < 2) {
-    return res.status(400).json({ error: 'Username must be at least 2 characters.' });
+    if (!username || typeof username !== 'string' || username.trim().length < 2)
+      return res.status(400).json({ error: 'Username must be at least 2 characters.' });
+    if (!password || typeof password !== 'string' || password.length < 4)
+      return res.status(400).json({ error: 'Password must be at least 4 characters.' });
+
+    const cleanName = username.trim().slice(0, 24);
+    if (/^guest-/i.test(cleanName))
+      return res.status(400).json({ error: 'Username cannot start with "Guest-".' });
+
+    const result = await createUser(cleanName, password);
+    if (!result.ok) return res.status(409).json({ error: result.error });
+
+    const token = jwt.sign({ id: result.id, username: result.username }, JWT_SECRET, { expiresIn: '30d' });
+    res.json({ token, username: result.username });
+  } catch (e) {
+    console.error('/api/register error:', e);
+    res.status(500).json({ error: 'Server error.' });
   }
-  if (!password || typeof password !== 'string' || password.length < 4) {
-    return res.status(400).json({ error: 'Password must be at least 4 characters.' });
-  }
-
-  const cleanName = username.trim().slice(0, 24);
-  // Disallow "Guest-" prefix to avoid confusion
-  if (/^guest-/i.test(cleanName)) {
-    return res.status(400).json({ error: 'Username cannot start with "Guest-".' });
-  }
-
-  const result = createUser(cleanName, password);
-  if (!result.ok) return res.status(409).json({ error: result.error });
-
-  const token = jwt.sign({ id: result.id, username: result.username }, JWT_SECRET, { expiresIn: '30d' });
-  res.json({ token, username: result.username });
 });
 
 // ---- REST: Login ----
-app.post('/api/login', (req, res) => {
-  const { username, password } = req.body || {};
-  if (!username || !password) return res.status(400).json({ error: 'Username and password required.' });
+app.post('/api/login', async (req, res) => {
+  try {
+    const { username, password } = req.body || {};
+    if (!username || !password)
+      return res.status(400).json({ error: 'Username and password required.' });
 
-  const result = verifyUser(username.trim(), password);
-  if (!result.ok) return res.status(401).json({ error: result.error });
+    const result = await verifyUser(username.trim(), password);
+    if (!result.ok) return res.status(401).json({ error: result.error });
 
-  const token = jwt.sign({ id: result.id, username: result.username }, JWT_SECRET, { expiresIn: '30d' });
-  res.json({
-    token,
-    username: result.username,
-    games_played: result.games_played,
-    games_won: result.games_won,
-  });
+    const token = jwt.sign({ id: result.id, username: result.username }, JWT_SECRET, { expiresIn: '30d' });
+    res.json({ token, username: result.username,
+               games_played: result.games_played, games_won: result.games_won });
+  } catch (e) {
+    console.error('/api/login error:', e);
+    res.status(500).json({ error: 'Server error.' });
+  }
 });
 
 // ---- REST: Validate token ----
@@ -78,17 +81,19 @@ app.get('/api/me', (req, res) => {
 });
 
 // ---- REST: Profile ----
-app.get('/api/profile', (req, res) => {
+app.get('/api/profile', async (req, res) => {
   const auth = req.headers.authorization || '';
   const token = auth.startsWith('Bearer ') ? auth.slice(7) : null;
   if (!token) return res.status(401).json({ error: 'Login required.' });
   try {
     const payload = jwt.verify(token, JWT_SECRET);
-    const profile = getUserProfile(payload.id);
+    const profile = await getUserProfile(payload.id);
     if (!profile) return res.status(404).json({ error: 'User not found.' });
     res.json(profile);
-  } catch {
-    res.status(401).json({ error: 'Invalid token.' });
+  } catch (e) {
+    if (e.name === 'JsonWebTokenError') return res.status(401).json({ error: 'Invalid token.' });
+    console.error('/api/profile error:', e);
+    res.status(500).json({ error: 'Server error.' });
   }
 });
 
