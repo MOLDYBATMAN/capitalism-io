@@ -95,17 +95,17 @@ const netplay = (() => {
       document.getElementById('online-indicator').style.display = 'flex';
       const chatToggle = document.getElementById('chat-toggle-btn');
       if (chatToggle) chatToggle.style.display = 'flex';
-      if (window.game && state) {
+      if (game && state) {
         game.restore(state);
-        if (window.ui) ui.refresh();
+        if (ui) ui.refresh();
       }
       _setWaitingOverlay(false);
     });
 
     socket.on('game:state', ({ state }) => {
-      if (!inOnlineGame || !window.game) return;
+      if (!inOnlineGame || !game) return;
       game.restore(state);
-      if (window.ui) ui.refresh();
+      if (ui) ui.refresh();
       _updateWaitingOverlay();
       _resetTurnTimer();
     });
@@ -118,13 +118,13 @@ const netplay = (() => {
       _setWaitingOverlay(false);
       const chatToggle = document.getElementById('chat-toggle-btn');
       if (chatToggle) chatToggle.style.display = 'none';
-      if (window.ui) window.ui.closeModal();
+      if (ui) ui.closeModal();
       showRoomScreen();
       _renderRoomScreen();
     });
 
     socket.on('game:player-ai', ({ playerIdx }) => {
-      if (!inOnlineGame || !window.game) return;
+      if (!inOnlineGame || !game) return;
       if (playerIdx >= 0 && playerIdx < game.players.length) {
         game.addLog(`⚠ ${game.players[playerIdx].name} disconnected — AI takes over.`);
         game.setPlayerAI(playerIdx);
@@ -360,9 +360,9 @@ const netplay = (() => {
 
     // Init game with all-human players and house rules
     const rules = (currentRoom && currentRoom._startRules) || (currentRoom && currentRoom.rules) || {};
-    if (window.game) {
+    if (game) {
       game.initGame(configs, rules);
-      if (window.ui) ui.refresh();
+      if (ui) ui.refresh();
     }
 
     _updateWaitingOverlay();
@@ -424,11 +424,11 @@ const netplay = (() => {
   function isMyTurn() {
     if (!inOnlineGame) return true; // local game: always "your" turn
     if (isSpectator) return false;
-    return myPlayerIdx === null || (window.game && game.currentPlayerIdx === myPlayerIdx);
+    return myPlayerIdx === null || (game && game.currentPlayerIdx === myPlayerIdx);
   }
 
   function _updateWaitingOverlay() {
-    if (!inOnlineGame || !window.game) return;
+    if (!inOnlineGame || !game) return;
     const isMyT = isMyTurn();
     _setWaitingOverlay(!isMyT);
   }
@@ -436,7 +436,7 @@ const netplay = (() => {
   function _setWaitingOverlay(show) {
     let overlay = document.getElementById('waiting-overlay');
     if (!overlay) return;
-    if (show && window.game) {
+    if (show && game) {
       const cp = game.players[game.currentPlayerIdx];
       const name = cp ? cp.name : '...';
       overlay.querySelector('.waiting-text').textContent = `Waiting for ${name}...`;
@@ -475,8 +475,8 @@ const netplay = (() => {
       if (_turnTimerSeconds <= 0) {
         _clearTurnTimer();
         // Auto-act if it's our turn
-        if (isMyTurn() && window.game) {
-          const g = window.game;
+        if (isMyTurn() && game) {
+          const g = game;
           if (g.state === 'roll_dice') g.rollDice();
           else if (g.state === 'player_actions') g.endTurn();
         }
