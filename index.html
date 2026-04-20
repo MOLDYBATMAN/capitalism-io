@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Capitalism.io — Browser Monopoly</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<!-- ====== AUTH SCREEN ====== -->
+<div id="screen-auth" class="screen active">
+  <div class="auth-wrapper">
+    <div class="auth-logo">
+      <span class="cap">CAPITALISM</span><span class="io">.io</span>
+    </div>
+    <p class="auth-tagline">The Ultimate Browser-Based Property Empire</p>
+
+    <div class="auth-card">
+      <div class="auth-tabs">
+        <button class="auth-tab-btn active" data-tab="login">Sign In</button>
+        <button class="auth-tab-btn" data-tab="register">Register</button>
+      </div>
+
+      <form class="auth-form active" id="auth-form-login">
+        <label class="auth-label">Username</label>
+        <input class="auth-input" id="login-username" type="text" placeholder="your username" autocomplete="username" required>
+        <label class="auth-label">Password</label>
+        <input class="auth-input" id="login-password" type="password" placeholder="your password" autocomplete="current-password" required>
+        <button class="btn btn-primary auth-submit" type="submit">Sign In</button>
+      </form>
+
+      <form class="auth-form" id="auth-form-register">
+        <label class="auth-label">Username <span class="auth-hint">(2–24 characters)</span></label>
+        <input class="auth-input" id="reg-username" type="text" placeholder="choose a username" autocomplete="username" required minlength="2" maxlength="24">
+        <label class="auth-label">Password <span class="auth-hint">(min 4 characters)</span></label>
+        <input class="auth-input" id="reg-password" type="password" placeholder="choose a password" autocomplete="new-password" required minlength="4">
+        <button class="btn btn-primary auth-submit" type="submit">Create Account</button>
+      </form>
+
+      <div class="auth-divider"><span>or</span></div>
+      <button class="btn btn-secondary auth-guest-btn" id="btn-play-guest">Play as Guest</button>
+    </div>
+
+    <button class="btn btn-secondary auth-local-btn" id="btn-auth-local" onclick="document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active')); document.getElementById('screen-lobby').classList.add('active');">
+      Play Local (Hot-Seat)
+    </button>
+  </div>
+</div>
+
+<!-- ====== LOCAL LOBBY SCREEN ====== -->
+<div id="screen-lobby" class="screen">
+  <div class="lobby-header">
+    <div class="lobby-title">
+      <span class="cap">CAPITALISM</span><span class="io">.io</span>
+    </div>
+    <p class="lobby-subtitle">The Ultimate Browser-Based Property Empire</p>
+  </div>
+
+  <div class="lobby-card">
+    <h2>⚙ GAME SETUP</h2>
+    <div class="player-slots">
+
+      <div class="player-slot">
+        <input type="checkbox" class="slot-toggle" checked>
+        <input type="text" class="slot-name" placeholder="Player 1" value="">
+        <label class="ai-label">
+          <input type="checkbox" class="slot-ai"> 🤖 AI
+        </label>
+      </div>
+
+      <div class="player-slot">
+        <input type="checkbox" class="slot-toggle" checked>
+        <input type="text" class="slot-name" placeholder="Player 2" value="">
+        <label class="ai-label">
+          <input type="checkbox" class="slot-ai" checked> 🤖 AI
+        </label>
+      </div>
+
+      <div class="player-slot">
+        <input type="checkbox" class="slot-toggle">
+        <input type="text" class="slot-name" placeholder="Player 3" value="">
+        <label class="ai-label">
+          <input type="checkbox" class="slot-ai" checked> 🤖 AI
+        </label>
+      </div>
+
+      <div class="player-slot">
+        <input type="checkbox" class="slot-toggle">
+        <input type="text" class="slot-name" placeholder="Player 4" value="">
+        <label class="ai-label">
+          <input type="checkbox" class="slot-ai" checked> 🤖 AI
+        </label>
+      </div>
+
+    </div>
+    <button class="btn btn-start" id="btn-start">▶ START LOCAL GAME</button>
+    <button class="btn btn-secondary" id="btn-play-online" style="width:100%; margin-top:10px;">🌐 Play Online</button>
+  </div>
+
+  <div class="lobby-features">
+    <div class="feature-card">
+      <div class="feature-icon">🏠</div>
+      <div class="feature-title">Full Monopoly Rules</div>
+      <div class="feature-desc">Buy, trade, build houses &amp; hotels. Chance &amp; Community Chest cards.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🤖</div>
+      <div class="feature-title">AI Opponents</div>
+      <div class="feature-desc">Smart AI players that buy aggressively and build monopolies.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🌐</div>
+      <div class="feature-title">Online Multiplayer</div>
+      <div class="feature-desc">Play with friends across the world in real-time.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ====== ONLINE LOBBY SCREEN ====== -->
+<div id="screen-lobby-online" class="screen">
+  <div class="online-lobby-header">
+    <div class="online-lobby-logo">
+      <span class="cap">CAPITALISM</span><span class="io">.io</span>
+      <span class="online-badge">ONLINE</span>
+    </div>
+    <div class="online-lobby-actions">
+      <button class="btn btn-secondary btn-sm-inline" id="btn-profile">👤 Profile</button>
+      <button class="btn btn-secondary btn-sm-inline" id="btn-back-to-local">← Local Play</button>
+      <button class="btn btn-secondary btn-sm-inline" id="btn-logout">Log Out</button>
+    </div>
+  </div>
+
+  <div class="online-lobby-body">
+    <!-- Room List -->
+    <div class="online-lobby-left">
+      <div class="section-header-row">
+        <span class="section-title">Public Rooms</span>
+        <button class="btn-icon" id="btn-refresh-rooms" title="Refresh">↺</button>
+      </div>
+      <div id="room-list" class="room-list">
+        <div class="room-list-empty">Loading rooms...</div>
+      </div>
+
+      <div class="join-by-code-row">
+        <input class="auth-input join-code-input" id="join-code-input" type="text" maxlength="6" placeholder="Room code..." style="text-transform:uppercase">
+        <button class="btn btn-secondary btn-sm-inline" id="btn-join-code">Join</button>
+      </div>
+    </div>
+
+    <!-- Create Room -->
+    <div class="online-lobby-right">
+      <div class="section-title" style="margin-bottom:16px">Create a Room</div>
+      <form class="create-room-form" id="create-room-form">
+        <label class="auth-label">Room Name</label>
+        <input class="auth-input" id="new-room-name" type="text" maxlength="40" placeholder="My Monopoly Game">
+
+        <label class="auth-label">Max Players</label>
+        <select class="auth-input" id="new-room-max">
+          <option value="2">2</option>
+          <option value="3">3</option>
+          <option value="4" selected>4</option>
+        </select>
+
+        <label class="auth-label checkbox-label">
+          <input type="checkbox" id="new-room-public" checked>
+          Public room (listed in lobby)
+        </label>
+
+        <div class="rules-section">
+          <div class="rules-title">House Rules</div>
+          <label class="rules-row">
+            <span>Starting money</span>
+            <select id="new-room-start-money" class="auth-input rules-select">
+              <option value="1000">$1,000</option>
+              <option value="1500" selected>$1,500</option>
+              <option value="2000">$2,000</option>
+            </select>
+          </label>
+          <label class="rules-row toggle-row">
+            <span>Free Parking jackpot</span>
+            <input type="checkbox" id="new-room-fp" checked class="toggle-check">
+          </label>
+          <label class="rules-row toggle-row">
+            <span>Double salary on GO</span>
+            <input type="checkbox" id="new-room-double-go" class="toggle-check">
+          </label>
+          <label class="rules-row toggle-row">
+            <span>No rent while in jail</span>
+            <input type="checkbox" id="new-room-no-jail-rent" class="toggle-check">
+          </label>
+        </div>
+
+        <button class="btn btn-primary" type="submit" style="width:100%;margin-top:8px">Create Room</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- ====== ROOM SCREEN ====== -->
+<div id="screen-room" class="screen">
+  <div class="room-screen-header">
+    <button class="btn btn-secondary btn-sm-inline" id="btn-room-leave">← Leave Room</button>
+    <div class="room-screen-name" id="room-screen-name">Room</div>
+    <div class="room-screen-spacer"></div>
+  </div>
+
+  <div class="room-screen-body">
+    <!-- Player list -->
+    <div class="room-main">
+      <div class="section-title" style="margin-bottom:12px">Players</div>
+      <div id="room-player-list" class="room-player-list"></div>
+
+      <div class="room-ready-area">
+        <button class="btn btn-primary" id="btn-room-ready">Mark Ready</button>
+        <button class="btn btn-primary" id="btn-room-start" style="display:none" disabled>▶ Start Game</button>
+      </div>
+
+      <div class="room-info-text">
+        Waiting for players to ready up. The host can start when everyone is ready.
+      </div>
+    </div>
+
+    <!-- Room chat -->
+    <div class="room-chat">
+      <div class="section-title" style="margin-bottom:8px">Room Chat</div>
+      <div id="room-chat-log" class="room-chat-log"></div>
+      <form id="room-chat-form" class="room-chat-form">
+        <input class="auth-input" id="room-chat-input" type="text" placeholder="Say something..." maxlength="200">
+        <button class="btn btn-secondary btn-sm-inline" type="submit">Send</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- ====== GAME SCREEN ====== -->
+<div id="screen-game" class="screen">
+
+  <!-- Board side -->
+  <div class="game-left">
+    <div class="game-header">
+      <div class="game-logo">CAPITALISM<span>.io</span></div>
+      <div id="game-status">Ready</div>
+      <div id="free-parking-amount">Free Parking: $0</div>
+      <!-- Online indicator -->
+      <div id="online-indicator" class="online-indicator" style="display:none"></div>
+      <!-- Turn timer (online games) -->
+      <div id="turn-timer" class="turn-timer" style="display:none">
+        <span id="turn-timer-seconds">90</span><span class="turn-timer-s">s</span>
+      </div>
+      <!-- Sound toggle -->
+      <button id="btn-sound-toggle" class="btn btn-secondary btn-icon" title="Toggle sounds">🔊</button>
+    </div>
+    <div class="board-wrapper">
+      <canvas id="board-canvas"></canvas>
+      <!-- Waiting overlay for opponent's turn -->
+      <div id="waiting-overlay" class="waiting-overlay">
+        <div class="waiting-content">
+          <div class="waiting-spinner"></div>
+          <div class="waiting-text">Waiting for opponent...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Info panel -->
+  <div class="game-right">
+
+    <div class="section-header">Players</div>
+    <div id="player-panels"></div>
+
+    <!-- Dice -->
+    <div class="dice-section">
+      <div class="section-header" style="margin: -12px -12px 10px; padding: 8px 12px;">Dice</div>
+      <div class="dice-row">
+        <div class="die" id="die1">⚀</div>
+        <div class="die" id="die2">⚀</div>
+      </div>
+
+      <!-- Action buttons -->
+      <div class="action-buttons">
+        <button class="btn btn-primary" id="btn-roll">🎲 Roll Dice</button>
+
+        <div id="jail-actions">
+          <button class="btn btn-warning" id="btn-pay-jail">💰 Pay $50</button>
+          <button class="btn btn-secondary" id="btn-jail-card">🃏 Use Card</button>
+        </div>
+
+        <button class="btn btn-secondary" id="btn-manage">🏗 Manage</button>
+        <button class="btn btn-secondary" id="btn-trade">🤝 Trade</button>
+        <button class="btn btn-primary" id="btn-end-turn" disabled>⏭ End Turn</button>
+        <button class="btn btn-new-game" id="btn-new-game">↩ New Game</button>
+      </div>
+    </div>
+
+    <!-- Game Log -->
+    <div class="log-section">
+      <div class="section-header">Game Log</div>
+      <div id="game-log"></div>
+    </div>
+
+  </div>
+
+  <!-- In-game chat toggle (online only) -->
+  <button id="chat-toggle-btn" class="chat-toggle-btn" style="display:none" title="Chat">
+    💬
+    <span id="chat-badge" class="chat-badge" style="display:none">0</span>
+  </button>
+
+  <!-- In-game chat panel -->
+  <div id="in-game-chat-panel" class="in-game-chat-panel">
+    <div class="in-game-chat-header">
+      <span>Chat</span>
+      <button class="btn-icon" onclick="netplay.toggleChat()">✕</button>
+    </div>
+    <div id="in-game-chat-log" class="in-game-chat-log"></div>
+    <form id="in-game-chat-form" class="in-game-chat-form">
+      <input class="auth-input" id="in-game-chat-input" type="text" placeholder="Message..." maxlength="200">
+      <button class="btn btn-secondary btn-sm-inline" type="submit">↑</button>
+    </form>
+  </div>
+</div>
+
+<!-- ====== MODALS ====== -->
+
+<!-- Buy Property Modal -->
+<div class="modal-backdrop" id="backdrop-buy">
+  <div class="modal" id="modal-buy">
+    <div class="modal-title">Buy Property?</div>
+    <div class="modal-body"></div>
+    <div class="modal-actions">
+      <button class="btn btn-primary" id="btn-buy-confirm">🏠 Buy</button>
+      <button class="btn btn-secondary" id="btn-buy-skip">Skip</button>
+    </div>
+  </div>
+</div>
+
+<!-- Card Modal -->
+<div class="modal-backdrop" id="backdrop-card">
+  <div class="modal" id="modal-card">
+    <div class="modal-title">Card Drawn!</div>
+    <div class="modal-body"></div>
+    <div class="modal-actions">
+      <button class="btn btn-primary" id="btn-card-ok">OK</button>
+    </div>
+  </div>
+</div>
+
+<!-- Manage Properties Modal -->
+<div class="modal-backdrop" id="backdrop-manage">
+  <div class="modal" id="modal-manage" style="max-width: 540px;">
+    <div class="modal-title">Manage Properties</div>
+    <div class="modal-body"></div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" id="btn-manage-close">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Trade Modal -->
+<div class="modal-backdrop" id="backdrop-trade">
+  <div class="modal" id="modal-trade" style="max-width: 600px;">
+    <div class="modal-title">Trade</div>
+    <div class="modal-body">
+      <select id="select-trade-target">
+        <option value="">Select player...</option>
+      </select>
+      <div id="trade-props-area"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-primary" id="btn-trade-confirm">✅ Confirm Trade</button>
+      <button class="btn btn-secondary" id="btn-trade-cancel">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Auction Modal -->
+<div class="modal-backdrop" id="backdrop-auction">
+  <div class="modal" id="modal-auction" style="max-width:460px">
+    <div class="modal-title">🔨 Auction</div>
+    <div class="modal-body"></div>
+    <div class="modal-actions">
+      <button class="btn btn-primary" id="btn-auction-bid">Place Bid</button>
+      <button class="btn btn-secondary" id="btn-auction-pass">Pass</button>
+    </div>
+  </div>
+</div>
+
+<!-- Profile Modal -->
+<div class="modal-backdrop" id="backdrop-profile">
+  <div class="modal" id="modal-profile" style="max-width:380px;text-align:center">
+    <div class="modal-title">👤 Profile</div>
+    <div class="modal-body" id="profile-modal-body">Loading...</div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" id="btn-profile-close" style="flex:none;margin:0 auto">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Game Over Modal -->
+<div class="modal-backdrop" id="backdrop-gameover">
+  <div class="modal" id="modal-gameover" style="max-width: 420px;">
+    <div class="modal-title">Game Over!</div>
+    <div class="modal-body"></div>
+    <div class="modal-actions">
+      <button class="btn btn-primary" id="btn-play-again">🔄 Play Again</button>
+    </div>
+  </div>
+</div>
+
+<!-- Scripts: socket.io first, then netplay, then game scripts -->
+<script src="/socket.io/socket.io.js"></script>
+<script src="js/sounds.js"></script>
+<script src="js/netplay.js"></script>
+<script src="js/boardData.js"></script>
+<script src="js/renderer.js"></script>
+<script src="js/game.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/main.js"></script>
+
+</body>
+</html>
