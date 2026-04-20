@@ -204,6 +204,28 @@ function setupSocketHandlers(io) {
       io.to(room.code).emit('room:update', { room: sanitizeRoom(room) });
     });
 
+    // ---- room:rematch ----
+    socket.on('room:rematch', () => {
+      const room = findRoomBySocket(socket.id);
+      if (!room) { socket.emit('room:error', { message: 'Not in a room.' }); return; }
+      if (room.host !== socket.id) { socket.emit('room:error', { message: 'Only the host can start a rematch.' }); return; }
+
+      // Reset room state
+      room.status = 'waiting';
+      room.currentPlayerIdx = 0;
+      room._lastState = null;
+
+      // Reset all players: host is auto-ready, others must re-ready
+      room.players.forEach(p => {
+        p.isReady = p.socketId === room.host;
+        p.disconnected = false;
+        if (p._reconnectTimer) { clearTimeout(p._reconnectTimer); p._reconnectTimer = null; }
+      });
+
+      io.to(room.code).emit('room:rematch');
+      io.to(room.code).emit('room:update', { room: sanitizeRoom(room) });
+    });
+
     // ---- game:state-update ----
     socket.on('game:state-update', ({ state } = {}) => {
       const room = findRoomBySocket(socket.id);

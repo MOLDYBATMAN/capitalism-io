@@ -30,7 +30,8 @@ class UI {
       if (!active) return;
       const name = slot.querySelector('.slot-name').value || slot.querySelector('.slot-name').placeholder;
       const isAI = slot.querySelector('.slot-ai').checked;
-      configs.push({ name, isAI });
+      const token = slot.querySelector('.slot-token')?.value || '🎩';
+      configs.push({ name, isAI, token });
     });
 
     if (configs.length < 2) {
@@ -38,9 +39,20 @@ class UI {
       return;
     }
 
+    const rules = {
+      startingMoney: parseInt(document.getElementById('local-start-money')?.value || 1500),
+      goSalary: parseInt(document.getElementById('local-go-salary')?.value || 200),
+      jailFine: parseInt(document.getElementById('local-jail-fine')?.value || 50),
+      freeParkingJackpot: document.getElementById('local-fp')?.checked ?? true,
+      doubleSalaryOnGO: document.getElementById('local-double-go')?.checked ?? false,
+      noRentInJail: document.getElementById('local-no-jail-rent')?.checked ?? false,
+      auctionsEnabled: document.getElementById('local-auctions')?.checked ?? true,
+      evenBuildRule: document.getElementById('local-even-build')?.checked ?? true,
+    };
+
     document.getElementById('screen-lobby').classList.remove('active');
     document.getElementById('screen-game').classList.add('active');
-    this.game.initGame(configs);
+    this.game.initGame(configs, rules);
     this.refresh();
   }
 
@@ -139,6 +151,20 @@ class UI {
       }
     });
 
+    document.getElementById('btn-rematch').addEventListener('click', () => {
+      if (typeof netplay !== 'undefined' && netplay.inOnlineGame) {
+        netplay.rematchRoom();
+      } else {
+        // Local rematch: restart with same player config
+        this.closeModal();
+        this.game.initGame(
+          this.game.players.map(p => ({ name: p.name, isAI: p.isAI, token: p.token })),
+          { ...this.game.rules }
+        );
+        this.refresh();
+      }
+    });
+
     // Auction modal
     document.getElementById('btn-auction-bid').addEventListener('click', () => {
       if (!this.game.auctionData) return;
@@ -199,7 +225,7 @@ class UI {
       const s = game.stats[i];
       div.innerHTML = `
         <div class="player-header">
-          <span class="player-token" style="color:${PLAYER_COLORS[i]}">${['●','■','▲','◆'][i]}</span>
+          <span class="player-token" style="color:${PLAYER_COLORS[i]}">${p.token || ['●','■','▲','◆'][i]}</span>
           <span class="player-name">${p.name}${p.isAI ? ' 🤖' : ''}</span>
           ${p.bankrupt ? '<span class="bankrupt-label">BANKRUPT</span>' : ''}
         </div>
@@ -287,10 +313,23 @@ class UI {
   appendLog(msg) {
     const logEl = document.getElementById('game-log');
     const entry = document.createElement('div');
-    entry.className = 'log-entry';
+    // Color-code by event type
+    let cls = 'log-entry';
+    if (/🏆|wins the game/.test(msg))              cls += ' log-win';
+    else if (/💀|bankrupt/.test(msg))              cls += ' log-bankrupt';
+    else if (/pays.*rent|rent to/.test(msg))        cls += ' log-rent-out';
+    else if (/collects.*rent|rent.*collect/.test(msg)) cls += ' log-rent-in';
+    else if (/bought|wins.*for \$|builds|hotel|unmortgage/.test(msg)) cls += ' log-buy';
+    else if (/mortgages/.test(msg))                 cls += ' log-mortgage';
+    else if (/Jail|jail/.test(msg))                 cls += ' log-jail';
+    else if (/draws:|🃏|Chance|Community/.test(msg)) cls += ' log-card';
+    else if (/passed GO|passed go|collect \$200|GO!/.test(msg)) cls += ' log-go';
+    else if (/rolls/.test(msg))                     cls += ' log-roll';
+    else if (/Auction|auction|bids \$/.test(msg))   cls += ' log-auction';
+    else if (/Trade:|trade/.test(msg))              cls += ' log-trade';
+    entry.className = cls;
     entry.textContent = msg;
     logEl.insertBefore(entry, logEl.firstChild);
-    // Trim old entries
     while (logEl.children.length > 60) logEl.removeChild(logEl.lastChild);
   }
 
@@ -577,6 +616,9 @@ class UI {
     const { winner } = data;
     const el = document.getElementById('modal-gameover');
     el.querySelector('.modal-title').textContent = `🏆 ${winner.name} Wins!`;
+    // Show rematch button always (local games get instant rematch, online games send socket event)
+    const rematchBtn = document.getElementById('btn-rematch');
+    if (rematchBtn) rematchBtn.style.display = 'block';
     el.querySelector('.modal-body').innerHTML = `
       <div class="winner-display">
         <div class="winner-token" style="color:${PLAYER_COLORS[winner.id]}">${['●','■','▲','◆'][winner.id]}</div>

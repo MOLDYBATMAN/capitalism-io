@@ -40,7 +40,7 @@ class Game {
     this.onLog = () => {};
     this.onModal = () => {};
     this.winner = null;
-    this.rules = { startingMoney: 1500, freeParkingJackpot: true, doubleSalaryOnGO: false, noRentInJail: false };
+    this.rules = { startingMoney: 1500, freeParkingJackpot: true, doubleSalaryOnGO: false, noRentInJail: false, auctionsEnabled: true, goSalary: 200, jailFine: 50, evenBuildRule: true };
     this.stats = {}; // playerId -> { propertiesBought, rentPaid, rentCollected, turnsInJail }
     this.auctionData = null;
     this._animating = false;
@@ -62,12 +62,13 @@ class Game {
 
   // ---- Initialization ----
   initGame(playerConfigs, rules = {}) {
-    this.rules = { startingMoney: 1500, freeParkingJackpot: true, doubleSalaryOnGO: false, noRentInJail: false, ...rules };
+    this.rules = { startingMoney: 1500, freeParkingJackpot: true, doubleSalaryOnGO: false, noRentInJail: false, auctionsEnabled: true, goSalary: 200, jailFine: 50, evenBuildRule: true, ...rules };
 
     this.players = playerConfigs.map((cfg, i) => ({
       id: i,
       name: cfg.name,
       isAI: cfg.isAI,
+      token: cfg.token || ['🎩','🚂','🐕','👢'][i],
       money: this.rules.startingMoney,
       position: 0,
       inJail: false,
@@ -166,8 +167,8 @@ class Game {
     } else {
       p.jailTurns++;
       if (p.jailTurns >= MAX_JAIL_TURNS) {
-        this.addLog(`${p.name} must pay $${JAIL_FINE} to leave jail.`);
-        this._charge(p, JAIL_FINE, null);
+        this.addLog(`${p.name} must pay $${this.rules.jailFine} to leave jail.`);
+        this._charge(p, this.rules.jailFine, null);
         p.inJail = false;
         p.jailTurns = 0;
         this.state = STATE.MOVING;
@@ -212,7 +213,7 @@ class Game {
   }
 
   _collectGo(player) {
-    const bonus = this.rules.doubleSalaryOnGO ? GO_BONUS * 2 : GO_BONUS;
+    const bonus = this.rules.doubleSalaryOnGO ? this.rules.goSalary * 2 : this.rules.goSalary;
     player.money += bonus;
     this.addLog(`${player.name} passed GO — collect $${bonus}!`);
     if (typeof Sounds !== 'undefined') Sounds.goBonus();
@@ -228,8 +229,8 @@ class Game {
 
   _resolveLanding(player, sp) {
     if (sp.type === 'go') {
-      // Extra $200 for landing exactly on GO
-      const goBonus = this.rules.doubleSalaryOnGO ? GO_BONUS * 2 : GO_BONUS;
+      // Extra bonus for landing exactly on GO
+      const goBonus = this.rules.doubleSalaryOnGO ? this.rules.goSalary * 2 : this.rules.goSalary;
       player.money += goBonus;
       this.addLog(`${player.name} landed on GO! Collect $${goBonus}.`);
       if (typeof Sounds !== 'undefined') Sounds.goBonus();
@@ -303,8 +304,13 @@ class Game {
 
   skipBuy(player) {
     const sp = SPACES[player.position];
-    this.addLog(`${player.name} passes on ${sp.name} — going to auction!`);
-    this._startAuction(player.position);
+    if (this.rules.auctionsEnabled !== false) {
+      this.addLog(`${player.name} passes on ${sp.name} — going to auction!`);
+      this._startAuction(player.position);
+    } else {
+      this.addLog(`${player.name} passes on ${sp.name}.`);
+      this._goToPlayerActions();
+    }
   }
 
   // ---- Auction ----
@@ -648,11 +654,11 @@ class Game {
 
   // ---- Jail Actions ----
   payJailFine(player) {
-    if (player.money < JAIL_FINE) return;
-    this._charge(player, JAIL_FINE, null, true);
+    if (player.money < this.rules.jailFine) return;
+    this._charge(player, this.rules.jailFine, null, true);
     player.inJail = false;
     player.jailTurns = 0;
-    this.addLog(`${player.name} pays $${JAIL_FINE} to leave jail.`);
+    this.addLog(`${player.name} pays $${this.rules.jailFine} to leave jail.`);
     this.state = STATE.ROLL_DICE;
     this.onUpdate();
     if (player.isAI) setTimeout(() => this.rollDice(), 500);
@@ -681,10 +687,13 @@ class Game {
     if (prop.mortgaged) return false;
     const player = this.players[playerId];
     if (player.money < sp.houseCost) return false;
-    // Even building rule: houses must be built evenly
-    const groupProps = SPACES.filter(s => s.type === 'property' && s.group === sp.group);
-    const minHouses = Math.min(...groupProps.map(s => this.properties[s.id].houses));
-    return prop.houses === minHouses;
+    // Even building rule: houses must be built evenly across the color group
+    if (this.rules.evenBuildRule !== false) {
+      const groupProps = SPACES.filter(s => s.type === 'property' && s.group === sp.group);
+      const minHouses = Math.min(...groupProps.map(s => this.properties[s.id].houses));
+      if (prop.houses !== minHouses) return false;
+    }
+    return true;
   }
 
   buildHouse(playerId, spaceId) {
@@ -993,6 +1002,9 @@ class Game {
     if (!this.currentPlayer.isAI || this.state !== STATE.PLAYER_ACTIONS) return;
     const player = this.currentPlayer;
 
+    // Try to complete a monopoly via trading
+    this._aiTrade(player);
+
     // Try to build houses
     let built = true;
     while (built) {
@@ -1010,6 +1022,44 @@ class Game {
     }
 
     setTimeout(() => this.endTurn(), 300);
+  }
+
+  _aiTrade(player) {
+    // Only in local games — online trades need human consent
+    if (typeof netplay !== 'undefined' && netplay.inOnlineGame) return;
+
+    // Build a map of color groups the AI partially owns
+    const groups = {};
+    SPACES.forEach(sp => {
+      if (sp.type !== 'property') return;
+      if (!groups[sp.group]) groups[sp.group] = { all: [], owned: [] };
+      groups[sp.group].all.push(sp);
+      const prop = this.properties[sp.id];
+      if (prop && prop.owner === player.id) groups[sp.group].owned.push(sp);
+    });
+
+    for (const group of Object.values(groups)) {
+      // Need exactly 1 missing to complete the group
+      const missing = group.all.filter(sp => this.properties[sp.id] && this.properties[sp.id].owner !== player.id);
+      if (missing.length !== 1 || group.owned.length < 1) continue;
+
+      const missingSpace = missing[0];
+      const missingProp = this.properties[missingSpace.id];
+      if (!missingProp || missingProp.owner === null) continue; // Unowned — auction will handle it
+
+      const targetPlayer = this.players[missingProp.owner];
+      if (!targetPlayer || targetPlayer.bankrupt) continue;
+
+      // Offer 150% of list price for the property
+      const offerPrice = Math.floor(missingSpace.price * 1.5);
+      if (player.money < offerPrice + 300) continue; // Keep a buffer
+
+      // Check target won't complete their own monopoly by losing this prop
+      // (Skip this check for simplicity — AI just makes a generous offer)
+      this.proposeTrade(player.id, targetPlayer.id, offerPrice, 0, [], [missingSpace.id]);
+      this.addLog(`🤖 ${player.name} pays $${offerPrice} to ${targetPlayer.name} for ${missingSpace.name} to complete a monopoly!`);
+      return; // One trade per turn
+    }
   }
 
   _aiRaiseMoney(player, creditor) {

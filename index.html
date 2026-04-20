@@ -63,37 +63,99 @@
 
       <div class="player-slot">
         <input type="checkbox" class="slot-toggle" checked>
+        <select class="slot-token">
+          <option value="🎩">🎩</option><option value="🚂">🚂</option><option value="🐕">🐕</option>
+          <option value="👢">👢</option><option value="🚗">🚗</option><option value="⚓">⚓</option>
+          <option value="🐱">🐱</option><option value="🏖">🏖</option>
+        </select>
         <input type="text" class="slot-name" placeholder="Player 1" value="">
-        <label class="ai-label">
-          <input type="checkbox" class="slot-ai"> 🤖 AI
-        </label>
+        <label class="ai-label"><input type="checkbox" class="slot-ai"> 🤖 AI</label>
       </div>
 
       <div class="player-slot">
         <input type="checkbox" class="slot-toggle" checked>
+        <select class="slot-token">
+          <option value="🎩">🎩</option><option value="🚂" selected>🚂</option><option value="🐕">🐕</option>
+          <option value="👢">👢</option><option value="🚗">🚗</option><option value="⚓">⚓</option>
+          <option value="🐱">🐱</option><option value="🏖">🏖</option>
+        </select>
         <input type="text" class="slot-name" placeholder="Player 2" value="">
-        <label class="ai-label">
-          <input type="checkbox" class="slot-ai" checked> 🤖 AI
-        </label>
+        <label class="ai-label"><input type="checkbox" class="slot-ai" checked> 🤖 AI</label>
       </div>
 
       <div class="player-slot">
         <input type="checkbox" class="slot-toggle">
+        <select class="slot-token">
+          <option value="🎩">🎩</option><option value="🚂">🚂</option><option value="🐕" selected>🐕</option>
+          <option value="👢">👢</option><option value="🚗">🚗</option><option value="⚓">⚓</option>
+          <option value="🐱">🐱</option><option value="🏖">🏖</option>
+        </select>
         <input type="text" class="slot-name" placeholder="Player 3" value="">
-        <label class="ai-label">
-          <input type="checkbox" class="slot-ai" checked> 🤖 AI
-        </label>
+        <label class="ai-label"><input type="checkbox" class="slot-ai" checked> 🤖 AI</label>
       </div>
 
       <div class="player-slot">
         <input type="checkbox" class="slot-toggle">
+        <select class="slot-token">
+          <option value="🎩">🎩</option><option value="🚂">🚂</option><option value="🐕">🐕</option>
+          <option value="👢" selected>👢</option><option value="🚗">🚗</option><option value="⚓">⚓</option>
+          <option value="🐱">🐱</option><option value="🏖">🏖</option>
+        </select>
         <input type="text" class="slot-name" placeholder="Player 4" value="">
-        <label class="ai-label">
-          <input type="checkbox" class="slot-ai" checked> 🤖 AI
-        </label>
+        <label class="ai-label"><input type="checkbox" class="slot-ai" checked> 🤖 AI</label>
       </div>
 
     </div>
+
+    <div class="rules-section" style="margin-bottom:16px">
+      <div class="rules-title">House Rules</div>
+      <label class="rules-row">
+        <span>Starting money</span>
+        <select id="local-start-money" class="auth-input rules-select">
+          <option value="1000">$1,000</option>
+          <option value="1500" selected>$1,500</option>
+          <option value="2000">$2,000</option>
+          <option value="3000">$3,000</option>
+        </select>
+      </label>
+      <label class="rules-row">
+        <span>GO salary</span>
+        <select id="local-go-salary" class="auth-input rules-select">
+          <option value="100">$100</option>
+          <option value="200" selected>$200</option>
+          <option value="400">$400</option>
+        </select>
+      </label>
+      <label class="rules-row">
+        <span>Jail fine</span>
+        <select id="local-jail-fine" class="auth-input rules-select">
+          <option value="25">$25</option>
+          <option value="50" selected>$50</option>
+          <option value="100">$100</option>
+        </select>
+      </label>
+      <label class="rules-row toggle-row">
+        <span>Free Parking jackpot</span>
+        <input type="checkbox" id="local-fp" checked class="toggle-check">
+      </label>
+      <label class="rules-row toggle-row">
+        <span>Double salary on GO</span>
+        <input type="checkbox" id="local-double-go" class="toggle-check">
+      </label>
+      <label class="rules-row toggle-row">
+        <span>No rent while in jail</span>
+        <input type="checkbox" id="local-no-jail-rent" class="toggle-check">
+      </label>
+      <label class="rules-row toggle-row">
+        <span>Auctions when declining</span>
+        <input type="checkbox" id="local-auctions" checked class="toggle-check">
+      </label>
+      <label class="rules-row toggle-row">
+        <span>Even building rule</span>
+        <input type="checkbox" id="local-even-build" checked class="toggle-check">
+      </label>
+    </div>
+
     <button class="btn btn-start" id="btn-start">▶ START LOCAL GAME</button>
     <button class="btn btn-secondary" id="btn-play-online" style="width:100%; margin-top:10px;">🌐 Play Online</button>
   </div>
@@ -175,6 +237,23 @@
               <option value="1000">$1,000</option>
               <option value="1500" selected>$1,500</option>
               <option value="2000">$2,000</option>
+              <option value="3000">$3,000</option>
+            </select>
+          </label>
+          <label class="rules-row">
+            <span>GO salary</span>
+            <select id="new-room-go-salary" class="auth-input rules-select">
+              <option value="100">$100</option>
+              <option value="200" selected>$200</option>
+              <option value="400">$400</option>
+            </select>
+          </label>
+          <label class="rules-row">
+            <span>Jail fine</span>
+            <select id="new-room-jail-fine" class="auth-input rules-select">
+              <option value="25">$25</option>
+              <option value="50" selected>$50</option>
+              <option value="100">$100</option>
             </select>
           </label>
           <label class="rules-row toggle-row">
@@ -188,6 +267,14 @@
           <label class="rules-row toggle-row">
             <span>No rent while in jail</span>
             <input type="checkbox" id="new-room-no-jail-rent" class="toggle-check">
+          </label>
+          <label class="rules-row toggle-row">
+            <span>Auctions when declining</span>
+            <input type="checkbox" id="new-room-auctions" checked class="toggle-check">
+          </label>
+          <label class="rules-row toggle-row">
+            <span>Even building rule</span>
+            <input type="checkbox" id="new-room-even-build" checked class="toggle-check">
           </label>
         </div>
 
@@ -403,7 +490,8 @@
     <div class="modal-title">Game Over!</div>
     <div class="modal-body"></div>
     <div class="modal-actions">
-      <button class="btn btn-primary" id="btn-play-again">🔄 Play Again</button>
+      <button class="btn btn-primary" id="btn-rematch" style="display:none">🔁 Rematch</button>
+      <button class="btn btn-secondary" id="btn-play-again">↩ New Game</button>
     </div>
   </div>
 </div>

@@ -110,6 +110,19 @@ const netplay = (() => {
       _resetTurnTimer();
     });
 
+    socket.on('room:rematch', () => {
+      // Server reset the room back to waiting — return to room screen
+      inOnlineGame = false;
+      isSpectator = false;
+      _clearTurnTimer();
+      _setWaitingOverlay(false);
+      const chatToggle = document.getElementById('chat-toggle-btn');
+      if (chatToggle) chatToggle.style.display = 'none';
+      if (window.ui) window.ui.closeModal();
+      showRoomScreen();
+      _renderRoomScreen();
+    });
+
     socket.on('game:player-ai', ({ playerIdx }) => {
       if (!inOnlineGame || !window.game) return;
       if (playerIdx >= 0 && playerIdx < game.players.length) {
@@ -360,6 +373,11 @@ const netplay = (() => {
   function spectateRoom(code) {
     if (!socket) return;
     socket.emit('room:spectate', { code: code.toUpperCase() });
+  }
+
+  function rematchRoom() {
+    if (!socket) return;
+    socket.emit('room:rematch');
   }
 
   socket && socket.on && (() => {})(); // placeholder — spectate join handled in _connectSocket
@@ -617,9 +635,13 @@ const netplay = (() => {
         const isPublic = document.getElementById('new-room-public').checked;
         const rules = {
           startingMoney: parseInt(document.getElementById('new-room-start-money')?.value || 1500),
+          goSalary: parseInt(document.getElementById('new-room-go-salary')?.value || 200),
+          jailFine: parseInt(document.getElementById('new-room-jail-fine')?.value || 50),
           freeParkingJackpot: document.getElementById('new-room-fp')?.checked ?? true,
           doubleSalaryOnGO: document.getElementById('new-room-double-go')?.checked ?? false,
           noRentInJail: document.getElementById('new-room-no-jail-rent')?.checked ?? false,
+          auctionsEnabled: document.getElementById('new-room-auctions')?.checked ?? true,
+          evenBuildRule: document.getElementById('new-room-even-build')?.checked ?? true,
         };
         createRoom(name, maxP, isPublic, rules);
       });
@@ -725,6 +747,7 @@ const netplay = (() => {
     syncState,
     isMyTurn,
     spectateRoom,
+    rematchRoom,
     showProfile,
     get inOnlineGame() { return inOnlineGame; },
     get isSpectator() { return isSpectator; },
